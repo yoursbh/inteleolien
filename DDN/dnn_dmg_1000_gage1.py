@@ -11,22 +11,26 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import tensorflow as tf
-# import seaborn as sns
+try:
+    import seaborn as sns
+except:
+    pass
 from sklearn.preprocessing import StandardScaler
 
 
-# HB : test modification
-
-# Data loading: Damage for 100 simulation
+# Data loading: Damage for 1000 simulation
 Data = pd.read_csv('./DataNS1000_gage1.csv')
 Data
 
 # Data selection:
 wind = Data.values[:,1:65]
-dmg = Data.values[:,65]
+dmg = Data.values[:,65:]
+#dmg = Data.values[:,65]
 XX = wind
 m, n = XX.shape
 yy = dmg
+p, q = yy.shape
+#q = 1
 
 # Scaling Data
 scaler = StandardScaler()
@@ -34,16 +38,17 @@ XX = scaler.fit_transform(XX)
 
 # Train and Test set
 X_train = XX[:10000].reshape(-1,n)
-y_train = yy[:10000].reshape(-1,1)
+y_train = yy[:10000].reshape(-1,q)
 X_test = XX[10000:].reshape(-1,n)
-y_test = yy[10000:].reshape(-1,1)
+y_test = yy[10000:].reshape(-1,q)
 
 m,n = X_train.shape
-p = y_train.shape
+p, q = y_train.shape
+#p = y_train.shape
 
-Labels = ['W-14','W-13','Sgm-u-13','Sgm-v-13','Sgm-w-13','Sgm-u-14','Sgm-v-14','Sgm-w-14','Damage']
-Dataf = pd.DataFrame({Labels[0]:XX[:,0],Labels[1]:XX[:,1],Labels[2]:XX[:,2],Labels[3]:XX[:,3],Labels[4]:XX[:,4],Labels[5]:XX[:,5],Labels[6]:XX[:,6],Labels[7]:XX[:,7],Labels[8]:yy})
-# sns.pairplot(Dataf, diag_kind="kde")
+#Labels = ['W-14','W-13','Sgm-u-13','Sgm-v-13','Sgm-w-13','Sgm-u-14','Sgm-v-14','Sgm-w-14','Damage']
+#Dataf = pd.DataFrame({Labels[0]:XX[:,0],Labels[1]:XX[:,1],Labels[2]:XX[:,2],Labels[3]:XX[:,3],Labels[4]:XX[:,4],Labels[5]:XX[:,5],Labels[6]:XX[:,6],Labels[7]:XX[:,7],Labels[8]:yy})
+#sns.pairplot(Dataf, diag_kind="kde")
 
 # DNN Creation
 
@@ -66,11 +71,13 @@ def selu (z, scale=1.05070098735548, alpha=1.6732632423543772848):
 def fetch_batch(epoch, batch_index, batch_size):
     np.random.seed(epoch * n_batches + batch_index)  # not shown in the book
     indices = np.random.randint(m, size=batch_size)  # not shown
+    indices_y = np.random.randint(p, size=batch_size)
+    #indices_y = np.random.randint(p[0], size=batch_size)
     X_batch = X_train.reshape(-1,n_input)[indices] # not shown
-    y_batch = y_train.reshape(-1,n_output)[indices] # not shown
+    y_batch = y_train.reshape(-1,n_output)[indices_y] # not shown
     return X_batch, y_batch
   
-n_epoch = 100
+n_epoch = 200
 learning_rate = 0.001
 
 n_input = n
@@ -81,7 +88,7 @@ n_hidden4 = 200
 n_hidden5 = 200
 n_hidden6 = 100
 n_hidden7 = 100
-n_output = 1
+n_output = q
 
 X = tf.placeholder(tf.float32, shape=[None, n_input], name='X')
 y = tf.placeholder(tf.float32, shape=[None, n_output], name='y')
@@ -143,9 +150,8 @@ mse_train = []
 mse_test = []
 
 with tf.Session() as sess:
-#   sess.run(init)
-  saver.restore(sess, "Damage100.ckpt")  # load best model
-  
+  sess.run(init)
+  saver.restore(sess, "./Damage100.ckpt")
   for epoch in range(n_epoch):
     for batch_index in range(n_batches):
       X_b, y_b = fetch_batch(epoch, batch_index, batch_size)
@@ -165,16 +171,30 @@ plt.plot(mse_test, label='MSE test')
 plt.legend()
 plt.show()
 
-plt.scatter(range(len(acc_test)),acc_test)
+plt.scatter(range(len(acc_test[:,12])),acc_test[:,12])
+plt.xlabel("No. Sample")
+plt.ylabel("Absolute Error: Output Prediction - Output")
 
-tol = 0.002
-correct_test = [1 for i in acc_test if i < tol]
-total_correct = len(correct_test)/len(acc_test)
+tol = 0.001
+correct_test = [1 for i in acc_test[:,12] if i < tol]
+total_correct = len(correct_test)/len(acc_test[:,12])
 total_correct
 
-plt.hist(y_test,bins=50)
+plt.hist(y_test[:,12],bins=50)
+plt.ylabel('Frequency')
+plt.xlabel('Damage')
 plt.show()
 
-plt.hist(y_pred,bins=50)
+plt.hist(y_pred[:,12],bins=50)
+#plt.xlim([-0.0002,0.0002])
+plt.ylabel('Frequency')
+plt.xlabel('Damage Predicted')
 plt.show()
 
+y_pred[:,0]
+
+y_test[:,0]
+
+X_test_dt = scaler.inverse_transform(X_test)
+
+X_test_dt[:,3]
