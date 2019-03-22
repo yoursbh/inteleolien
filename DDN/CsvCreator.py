@@ -118,6 +118,15 @@ class CsvCreator(object):
         pass
 
     def csvwrite(self, echo= True):
+        header = ["Seed"]
+        temp = ["Wind speed-u (m/s)"]*16
+        header.extend(temp)
+        temp = ["Std. dev. u", "Std. dev. v", "Std. dev. w"] * 16
+        header.extend(temp)
+        temp = ["Damage@{}".format(theta) for theta in range(0, 360, 10)]
+        header.extend(temp)
+        self.csvfile.insert(0,header)
+
         with open(self.outputfile, 'w') as sfile:
             wr = csv.writer(sfile, dialect='excel', delimiter = ',')
             wr.writerows(self.csvfile)
