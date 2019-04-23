@@ -21,10 +21,16 @@ import sklearn.utils
 import json
 import random
 
+#! General setting =============================================================
+export_result = False # set True for save prediction values in .json
+reuse_network = True # set True for loading pre-trained network
+save_network = False # set True for saving current network after training
 
 #! Preprocessing Data ==========================================================
-""" - Inputs are stored between columns 1 and 64. The first 16 columns are wind     speed at different heigth of the wind turbine tower, from Hub height to 
-    bottom, the following columns contain standard deviation u, v and w components for each wind speed.
+""" - Inputs are stored between columns 1 and 64. The first 16 columns are wind
+    speed at different heigth of the wind turbine tower, from Hub height to 
+    bottom, the following columns contain standard deviation u, v and w 
+    components for each wind speed.
     
     - Outputs are from column 65 to 101, these are the damage computed at the 
     bottom of the wind turbine tower for differents angles theta = [0:10:360].
@@ -190,7 +196,9 @@ mse_tol = -99999999.0
 
 with tf.Session() as sess:
     sess.run(init)
-    # saver.restore(sess, "./Damage1000.ckpt")
+    if reuse_network:
+        saver.restore(sess, "./Damage1000.ckpt")
+        print("[OK] Checkpoint loaded !")
     # training model
     for epoch in range(n_epoch):
         for batch_index in range(n_batches):
@@ -216,8 +224,9 @@ with tf.Session() as sess:
         else:
             mse_tol = mse_valid[i]
             i = i + 1
-    save_path = saver.save(sess, "./Damage1000.ckpt")
-    print("[OK] Checkpoint saved !")
+    if save_network:
+        save_path = saver.save(sess, "./Damage1000.ckpt")
+        print("[OK] Checkpoint saved !")
     epoch_saved = epoch
     y_pred = sess.run(output, feed_dict={X:X_valid})
     acc_train = accuracy.eval(feed_dict={X:X_train, y:y_train})
@@ -286,11 +295,12 @@ plt.legend()
 plt.show()
 
 #* Export damages to JSON File
-result = []
-for i in range(len(X_valid_dt)):
-    for j in range(len(y_pred_dt[0,:])):
-        result.append((seed_valid[i], X_valid_dt[i,0], j*10,
-                       float(y_pred_dt[i,j]), float(y_valid_dt[i,j])))
-with open('Damage.json', 'w') as f:
-    json.dump(result,f,indent=4)
+if export_result:
+    result = []
+    for i in range(len(X_valid_dt)):
+        for j in range(len(y_pred_dt[0,:])):
+            result.append((seed_valid[i], X_valid_dt[i,0], j*10,
+                        float(y_pred_dt[i,j]), float(y_valid_dt[i,j])))
+    with open('Damage.json', 'w') as f:
+        json.dump(result,f,indent=4)
 
