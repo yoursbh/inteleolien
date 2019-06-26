@@ -185,10 +185,9 @@ def find(path, pattern, size=None):
         p = Path().expanduser()
         matched = sorted(p.glob(pattern))
         if size is None:
-            result = [x.stem.split('.')[0] for x in matched]
+            result = [x.stem for x in matched]
         else:
-            result = [x.stem.split('.')[0]
-                        for x in matched if x.stat().st_size >= size]
+            result = [x.stem for x in matched if x.stat().st_size >= size]
     return result
 
 
@@ -207,14 +206,33 @@ def main():
     windfiles = find(windpath, "*.sum")
     damagefiles = find(damagepath, "*.dam")
 
+    case = 3
+    # DmgG1 : damage from 1000 seeds for wind speed 3, 5, 7, ..., 25 m/s
+    if case == 1:
+        DmgG1 = CsvCreator(directory=directory, wndfn= windfiles,
+                        dmgfn= damagefiles, outputfile="DataNS1000_gage1.csv", gage="1",
+                        echo=True)
+        DmgG1.windcsv()
+        DmgG1.damagecsv()
+        DmgG1.csvwrite()
 
-    DmgG1 = CsvCreator(directory=directory, wndfn= windfiles,
-                       dmgfn= damagefiles, outputfile="DataNS1000_gage1.csv", gage="1",
-                       echo=True)
-    DmgG1.windcsv()
-    DmgG1.damagecsv()
-    DmgG1.csvwrite()
+    # DmgG2 : damage from 10 seeds for wind speed 3.0, 3.1, 3.2, ..., 25.0 m/s
+    if case == 2:
+        DmgG2 = CsvCreator(directory=directory, wndfn=windfiles,
+                        dmgfn=damagefiles, outputfile="DataNS10_gage1.csv", gage="1",
+                        echo=True)
+        DmgG2.windcsv()
+        DmgG2.damagecsv()
+        DmgG2.csvwrite()
 
+    # DmgG3 : damage from 1000 seeds for wind speed 3.0, 3.1, 3.2, ..., 25.0 m/s
+    if case == 3:
+        DmgG3 = CsvCreator(directory=directory, wndfn=windfiles,
+                           dmgfn=damagefiles, outputfile="Data@1.0mps_1000_gage1.csv", gage="1",
+                           echo=True)
+        DmgG3.windcsv()
+        DmgG3.damagecsv()
+        DmgG3.csvwrite()
 
 
 #!------------------------------------------------------------------------------

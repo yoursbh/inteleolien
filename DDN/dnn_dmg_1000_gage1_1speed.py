@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-# DNN_DMG_1000_gage1_NoHighVal.ipynb
+# DNN_DMG_1000_gage1_1speed.ipynb
 # Wilson VELOZ, Hao BAI
 #
 # Original file is located at
-#    https://colab.research.google.com/drive/1ym7L1mEyG46ovT0VfNNgHjWgMXNQOKxH
+#    https://colab.research.google.com/drive/1zndfncrtkBylli1RVmlsbFTZM-V7OsLl
 #
 # Deep Neural Network for prediting fatigue damage from wind conditions
 #   - INPUT: standard deviation on X-direction over all height under 1 wind 
