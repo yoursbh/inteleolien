@@ -11,6 +11,7 @@
 # Version:
 #   - 0.0: Initial version
 #   - 0.1: export all 36 angles on tower gage 1
+#   - 0.2: [02/10/2020] update the script to use new style wind files
 # Comments:
 # 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -34,6 +35,7 @@ from os.path import isfile, join
 from itertools import islice
 from pathlib import Path
 import json
+import pandas as pd
 
 #!------------------------------------------------------------------------------
 #!                                         CLASS
@@ -206,7 +208,7 @@ def main():
     windfiles = find(windpath, "*.sum")
     damagefiles = find(damagepath, "*.dam")
 
-    case = 3
+    case = 4
     # DmgG1 : damage from 1000 seeds for wind speed 3, 5, 7, ..., 25 m/s
     if case == 1:
         DmgG1 = CsvCreator(directory=directory, wndfn= windfiles,
@@ -233,6 +235,41 @@ def main():
         DmgG3.windcsv()
         DmgG3.damagecsv()
         DmgG3.csvwrite()
+
+
+    if case == 4:
+        # dam_list = utils.find("./data/wind statistics", "NTM_3.0mps_*.dam")
+        # print("[OK] Find {} .dam files".format(len(dam_list)))
+        v = 4.0
+        data = utils.load_json(
+            "./data/wind statistics/lmn-cs_out@{}mps.json".format(v))
+        print("[OK] Load wind .json file")
+        key_list = []
+        windu_mean, windv_mean, windw_mean = [], [], []
+        windu_std, windv_std, windw_std = [], [], []
+        damage_0 = []
+        for key, value in data.items():
+            # get wind information
+            key_list.append(int(key))
+            windu_mean.append(value["X_mean"])
+            windv_mean.append(value["Y_mean"])
+            windw_mean.append(value["Z_mean"])
+            windu_std.append(value["X_std"])
+            windv_std.append(value["Y_std"])
+            windw_std.append(value["Z_std"])
+            # get damage information
+            data_dam = utils.load_json(
+                "./data/lmn-cs/NTM_{}mps_{}.dam".format(v, key))
+            damage_0.append(data_dam["TwHt1@0"]["Dcumulate"])
+        # create datafram
+        df = pd.DataFrame(
+            list(zip(key_list, windu_mean, windv_mean, windw_mean, windu_std,
+                     windv_std, windw_std, damage_0)),
+            columns=["Seed", "Speed u", "Speed v", "Speed w", "Std. u",
+                     "Std. v", "Std. w", "Damage@0"])
+        csv_filename = "NTM@{}mps_10000_gage1.csv".format(v)
+        df.to_csv(csv_filename, index=False)
+        print("[OK] Save {} to disk".format(csv_filename))
 
 
 #!------------------------------------------------------------------------------
